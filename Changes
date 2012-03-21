@@ -1,4 +1,8 @@
 Revision history for IO-Async-Loop-Mojo
 
+0.02    CHANGES:
+         * Updated for Mojolicious 2.64:
+            + Mojo::IOWatcher is now called Mojo::Reactor
+
 0.01    First version, released on an unsuspecting world.
 

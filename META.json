@@ -23,14 +23,14 @@
       "runtime" : {
          "requires" : {
             "IO::Async::Loop" : "0.33",
-            "Mojolicious" : "2"
+            "Mojolicious" : "2.64"
          }
       }
    },
    "provides" : {
       "IO::Async::Loop::Mojo" : {
          "file" : "lib/IO/Async/Loop/Mojo.pm",
-         "version" : "0.01"
+         "version" : "0.02"
       }
    },
    "release_status" : "stable",
@@ -39,5 +39,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.01"
+   "version" : "0.02"
 }

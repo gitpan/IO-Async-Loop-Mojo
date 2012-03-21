@@ -12,7 +12,7 @@ SYNOPSIS
      # Rest of Mojolicious code here
 
 DESCRIPTION
-    This subclass of IO::Async::Loop uses Mojo::IOWatcher to perform its IO
+    This subclass of IO::Async::Loop uses Mojo::Reactor to perform its IO
     operations. It allows the use of IO::Async-based code or modules from
     within a Mojolicious application.
 

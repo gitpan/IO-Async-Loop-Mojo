@@ -7,7 +7,7 @@ WriteMakefile
   'PREREQ_PM' => {
                    'IO::Async::Loop' => '0.33',
                    'IO::Async::LoopTests' => '0.24',
-                   'Mojolicious' => '2',
+                   'Mojolicious' => '2.64',
                    'Test::More' => 0
                  },
   'INSTALLDIRS' => 'site',
