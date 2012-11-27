@@ -6,8 +6,8 @@ use Module::Build;
 my $build = Module::Build->new(
    module_name => 'IO::Async::Loop::Mojo',
    requires => {
-      'IO::Async::Loop' => '0.33',
-      'Mojolicious' => '2.64',
+      'IO::Async::Loop' => '0.49',
+      'Mojolicious' => '2.65',
    },
    build_requires => {
       'IO::Async::LoopTests' => '0.24',

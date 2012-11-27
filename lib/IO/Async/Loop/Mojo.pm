@@ -8,11 +8,11 @@ package IO::Async::Loop::Mojo;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
-use constant API_VERSION => '0.33';
+our $VERSION = '0.03';
+use constant API_VERSION => '0.49';
 
 use base qw( IO::Async::Loop );
-IO::Async::Loop->VERSION( '0.33' );
+IO::Async::Loop->VERSION( '0.49' );
 
 use Carp;
 
@@ -55,7 +55,7 @@ sub new
    my $class = shift;
    my $self = $class->__new( @_ );
 
-   $self->{reactor} = Mojo::Reactor->new;
+   $self->{reactor} = Mojo::Reactor->detect->new;
 
    return $self;
 }
@@ -129,12 +129,12 @@ sub unwatch_io
       $reactor->watch( $handle => defined $cbs->[0], defined $cbs->[1] );
    }
    else {
-      $reactor->drop( $handle );
+      $reactor->remove( $handle );
       delete $self->{io_cbs}{$fd};
    }
 }
 
-sub enqueue_timer
+sub watch_time
 {
    my $self = shift;
    my ( %params ) = @_;
@@ -142,61 +142,40 @@ sub enqueue_timer
    my $reactor = $self->{reactor};
 
    my $delay;
-   if( exists $params{time} ) {
+   if( exists $params{at} ) {
       my $now = exists $params{now} ? $params{now} : $self->time;
 
-      $delay = delete($params{time}) - $now;
+      $delay = delete($params{at}) - $now;
    }
-   elsif( exists $params{delay} ) {
-      $delay = delete $params{delay};
+   elsif( exists $params{after} ) {
+      $delay = delete $params{after};
    }
    else {
-      croak "Expected either 'time' or 'delay' keys";
+      croak "Expected either 'at' or 'after' keys";
    }
 
    my $code = delete $params{code};
-
-   my $callbacks = $self->{timercallbacks};
 
    my $id;
    my $callback = sub {
       my $reactor = shift;
       $code->();
-      delete $callbacks->{$id};
       $reactor->stop;
    };
 
-   $id = $reactor->timer( $delay => $callback );
-
-   $callbacks->{$id} = $code;
-
-   return $id;
+   return $reactor->timer( $delay => $callback );
 }
 
-sub cancel_timer
+sub unwatch_time
 {
    my $self = shift;
    my ( $id ) = @_;
 
    my $reactor = $self->{reactor};
 
-   $reactor->drop( $id );
-   delete $self->{timercallbacks}{$id};
+   $reactor->remove( $id );
 
    return;
-}
-
-sub requeue_timer
-{
-   my $self = shift;
-   my ( $id, %params ) = @_;
-
-   my $callback = $self->{timercallbacks}{$id};
-   defined $callback or croak "No such enqueued timer";
-
-   $self->cancel_timer( $id );
-
-   return $self->enqueue_timer( %params, code => $callback );
 }
 
 sub loop_once
@@ -217,7 +196,7 @@ sub loop_once
 
    $self->_manage_queues;
 
-   $reactor->drop( $timeout_id );
+   $reactor->remove( $timeout_id );
 }
 
 =head1 AUTHOR

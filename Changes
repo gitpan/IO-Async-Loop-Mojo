@@ -1,5 +1,12 @@
 Revision history for IO-Async-Loop-Mojo
 
+0.03    CHANGES:
+         * Updated for Mojolicious 2.65:
+            + Mojo::Reactor is now an abstract base class
+            + ->drop is now called ->remove
+         * Updated for IO::Async 0.49 Loop API:
+            + ->watch_time/->unwatch_time
+
 0.02    CHANGES:
          * Updated for Mojolicious 2.64:
             + Mojo::IOWatcher is now called Mojo::Reactor
