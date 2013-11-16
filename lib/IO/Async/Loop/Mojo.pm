@@ -1,14 +1,14 @@
 #  You may distribute under the terms of either the GNU General Public License
 #  or the Artistic License (the same terms as Perl itself)
 #
-#  (C) Paul Evans, 2012 -- leonerd@leonerd.org.uk
+#  (C) Paul Evans, 2012-2013 -- leonerd@leonerd.org.uk
 
 package IO::Async::Loop::Mojo;
 
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 use constant API_VERSION => '0.49';
 
 use base qw( IO::Async::Loop );
@@ -17,6 +17,7 @@ IO::Async::Loop->VERSION( '0.49' );
 use Carp;
 
 use Mojo::Reactor;
+use Mojo::IOLoop;
 
 =head1 NAME
 
@@ -55,7 +56,7 @@ sub new
    my $class = shift;
    my $self = $class->__new( @_ );
 
-   $self->{reactor} = Mojo::Reactor->detect->new;
+   $self->{reactor} = Mojo::IOLoop->singleton->reactor;
 
    return $self;
 }
@@ -88,7 +89,6 @@ sub watch_io
          else {
             $cbs->[0]->();
          }
-         $reactor->stop;
       } );
 
       [];
@@ -154,13 +154,16 @@ sub watch_time
       croak "Expected either 'at' or 'after' keys";
    }
 
+   $delay = 0 if $delay < 0;
+
    my $code = delete $params{code};
 
    my $id;
+
+   my $once;
    my $callback = sub {
       my $reactor = shift;
-      $code->();
-      $reactor->stop;
+      $code->() unless $once++;
    };
 
    return $reactor->timer( $delay => $callback );
@@ -186,17 +189,37 @@ sub loop_once
 
    $self->_adjust_timeout( \$timeout );
 
-   my $timeout_id = $reactor->timer( $timeout => sub {
-      my $reactor = shift;
-      $reactor->stop;
-   } );
+   my $timeout_id;
+   if( defined $timeout ) {
+      $timeout_id = $reactor->timer( $timeout => sub {} );
+   }
 
-   # Start the reactor; when something happens it will stop
-   $reactor->start;
+   $reactor->one_tick;
 
    $self->_manage_queues;
 
-   $reactor->remove( $timeout_id );
+   $reactor->remove( $timeout_id ) if $timeout_id;
+}
+
+sub run
+{
+   my $self = shift;
+   my $reactor = $self->{reactor};
+
+   local $self->{result} = [];
+
+   $reactor->start;
+
+   return wantarray ? @{ $self->{result} } : $self->{result}[0];
+}
+
+sub stop
+{
+   my $self = shift;
+   @{ $self->{result} } = @_;
+
+   my $reactor = $self->{reactor};
+   $reactor->stop;
 }
 
 =head1 AUTHOR
