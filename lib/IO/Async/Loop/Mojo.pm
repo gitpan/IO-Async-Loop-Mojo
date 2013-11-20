@@ -8,7 +8,7 @@ package IO::Async::Loop::Mojo;
 use strict;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use constant API_VERSION => '0.49';
 
 use base qw( IO::Async::Loop );
@@ -206,11 +206,19 @@ sub run
    my $self = shift;
    my $reactor = $self->{reactor};
 
-   local $self->{result} = [];
+   my $result = [];
+   # Not all Mojo::Reactor classes cope well with nested invocations
+   if( !exists $self->{result} ) {
+      local $self->{result} = $result;
+      $reactor->start;
+   }
+   else {
+      local $self->{result} = $result;
+      local $self->{running} = 1;
+      $reactor->one_tick while $self->{running};
+   }
 
-   $reactor->start;
-
-   return wantarray ? @{ $self->{result} } : $self->{result}[0];
+   return wantarray ? @$result : $result->[0];
 }
 
 sub stop
@@ -218,8 +226,7 @@ sub stop
    my $self = shift;
    @{ $self->{result} } = @_;
 
-   my $reactor = $self->{reactor};
-   $reactor->stop;
+   $self->{running} ? undef $self->{running} : $self->{reactor}->stop;
 }
 
 =head1 AUTHOR
